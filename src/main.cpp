@@ -48,6 +48,7 @@ namespace {
         }
     };
 
+    // https://stackoverflow.com/questions/116038/what-is-the-best-way-to-read-an-entire-file-into-a-stdstring-in-c
     std::string readFile(const std::string &fileName)
     {
         using namespace std;
