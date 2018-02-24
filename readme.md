@@ -10,7 +10,9 @@ Currently renders a triangle in pretty colors.
 ## Building
 
 `mkdir build && cd build && cmake ..`
+
 `ln -s ../src/shaders shaders`
+
 `make`
 
 ## Usage
