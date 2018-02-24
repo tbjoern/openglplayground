@@ -131,7 +131,7 @@ int main()
     glAttachShader(shader_program, fragment_shader);
 
     // bind fragment shader outputs to buffers
-    glBindFragDataLocation(shader_program, 0, "outColor");
+    glBindFragDataLocation(shader_program, 0, "out_color");
 
     // link and use
     glLinkProgram(shader_program);
@@ -164,6 +164,9 @@ int main()
     // link vertex data to shader input
     GLint position_shader_attribute = glGetAttribLocation(shader_program, "position");
     glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 0, 0); // also stores the current vertex buffer
+
+    GLint color_shader_attribute = glGetUniformLocation(shader_program, "triangle_color");
+    glUniform3f(color_shader_attribute, 0.f, 0.f, 1.f);
 
     glEnableVertexAttribArray(position_shader_attribute);
 
