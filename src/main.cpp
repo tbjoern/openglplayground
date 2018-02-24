@@ -9,6 +9,9 @@
 #include <string>
 #include <exception>
 #include <sstream>
+#include <chrono>
+
+#include <cmath>
 
 namespace {
 
@@ -170,8 +173,19 @@ int main()
 
     glEnableVertexAttribArray(position_shader_attribute);
 
+    auto t_start = std::chrono::high_resolution_clock::now();
+    constexpr float pi = 3.14f;
+
     while(!glfwWindowShouldClose(window))
     {
+        auto t_now = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+
+        float r = (std::sin(time * 4.0f) + 1.0f) / 2.0f;
+        float g = (std::sin(time * 4.0f + pi*2.f/3.f) + 1.0f) / 2.0f;
+        float b = (std::sin(time * 4.0f + pi*4.f/3.f) + 1.0f) / 2.0f;
+        glUniform3f(color_shader_attribute, r,g,b);
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glfwSwapBuffers(window);
