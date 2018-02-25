@@ -156,38 +156,28 @@ int main()
 
     // triangle coordinates
     float vertices[] = {
-        0.0f,  0.5f, // Vertex 1 (X, Y)
-        0.5f, -0.5f, // Vertex 2 (X, Y)
-        -0.5f, -0.5f  // Vertex 3 (X, Y)
+        0.0f,  0.5f, 1.f, 0.f, 0.f, // Vertex 1 (X, Y) r,g,b
+        0.5f, -0.5f, 0.f, 1.f, 0.f, // Vertex 2 (X, Y) r,g,b
+        -0.5f, -0.5f, 0.f, 0.f, 1.f  // Vertex 3 (X, Y) r,g,b
     };
 
     // move triangle coordinates into vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); // set vertexBuffer as active Buffer
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // copy coordinates into active buffer
 
     // link vertex data to shader input
     GLint position_shader_attribute = glGetAttribLocation(shader_program, "position");
-    glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 0, 0); // also stores the current vertex buffer
+    glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0); // also stores the current vertex buffer
 
-    GLint color_shader_attribute = glGetUniformLocation(shader_program, "triangle_color");
-    glUniform3f(color_shader_attribute, 0.f, 0.f, 1.f);
+    GLint color_shader_attribute = glGetAttribLocation(shader_program, "color");
+    glVertexAttribPointer(color_shader_attribute, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
 
     glEnableVertexAttribArray(position_shader_attribute);
-
-    auto t_start = std::chrono::high_resolution_clock::now();
-    constexpr float pi = 3.14f;
+    glEnableVertexAttribArray(color_shader_attribute);
 
     while(!glfwWindowShouldClose(window))
     {
-        auto t_now = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
-
-        float r = (std::sin(time * 4.0f) + 1.0f) / 2.0f;
-        float g = (std::sin(time * 4.0f + pi*2.f/3.f) + 1.0f) / 2.0f;
-        float b = (std::sin(time * 4.0f + pi*4.f/3.f) + 1.0f) / 2.0f;
-        glUniform3f(color_shader_attribute, r,g,b);
-
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
