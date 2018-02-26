@@ -156,9 +156,15 @@ int main()
 
     // triangle coordinates
     float vertices[] = {
-        0.0f,  0.5f, 1.f, 0.f, 0.f, // Vertex 1 (X, Y) r,g,b
-        0.5f, -0.5f, 0.f, 1.f, 0.f, // Vertex 2 (X, Y) r,g,b
-        -0.5f, -0.5f, 0.f, 0.f, 1.f  // Vertex 3 (X, Y) r,g,b
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
+        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left
+    };
+
+    GLuint elements[] = {
+        0, 1, 2,
+        2, 3, 0
     };
 
     // move triangle coordinates into vertex buffer
@@ -175,9 +181,15 @@ int main()
     glEnableVertexAttribArray(position_shader_attribute);
     glEnableVertexAttribArray(color_shader_attribute);
 
+    GLuint element_buffer;
+    glGenBuffers(1, &element_buffer);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+
     while(!glfwWindowShouldClose(window))
     {
-        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
