@@ -12,6 +12,7 @@ set(libraries
     OpenGL
     glfw
     GLEW
+    SOIL
 )
 
 add_executable(${target} ${sources} ${includes})

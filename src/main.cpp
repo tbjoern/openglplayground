@@ -1,7 +1,7 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
-
 #include <GLFW/glfw3.h>
+#include <SOIL/SOIL.h>
 
 #include <iostream>
 #include <fstream>
@@ -156,10 +156,10 @@ int main()
 
     // triangle coordinates
     float vertices[] = {
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, // Top-left
-        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, // Top-right
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-right
-        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f  // Bottom-left
+        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.f, 0.f, // Top-left
+        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.f, 0.f, // Top-right
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.f, 1.f, // Bottom-right
+        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.f, 1.f  // Bottom-left
     };
 
     GLuint elements[] = {
@@ -173,19 +173,44 @@ int main()
 
     // link vertex data to shader input
     GLint position_shader_attribute = glGetAttribLocation(shader_program, "position");
-    glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), 0); // also stores the current vertex buffer
+    glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0); // also stores the current vertex buffer
 
     GLint color_shader_attribute = glGetAttribLocation(shader_program, "color");
-    glVertexAttribPointer(color_shader_attribute, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(2*sizeof(float)));
+    glVertexAttribPointer(color_shader_attribute, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
+
+    GLint texture_shader_attribute = glGetAttribLocation(shader_program, "texture");
+    glVertexAttribPointer(texture_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
 
     glEnableVertexAttribArray(position_shader_attribute);
     glEnableVertexAttribArray(color_shader_attribute);
+    glEnableVertexAttribArray(texture_shader_attribute);
 
     GLuint element_buffer;
     glGenBuffers(1, &element_buffer);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+
+    // initialize Texture
+    GLuint texture;
+    glGenTextures(1, &texture);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    int width, height;
+    unsigned char* image = SOIL_load_image("resources/images/elite_dangerous.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    SOIL_free_image_data(image);
 
     while(!glfwWindowShouldClose(window))
     {
