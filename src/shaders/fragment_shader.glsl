@@ -15,11 +15,12 @@ void main()
 {
     float xcoord = Texture.x;
     float ycoord = Texture.y;
-    if(Texture.y > 0.5f) {
+    float threshold = 0.7f;
+    if(Texture.y > threshold) {
         float sin_distort = (sin(Texture.y * 50.f + time) + sin(Texture.y* 80.f)) / 30.f;
-        sin_distort *= (ycoord - 0.5f);
+        sin_distort *= log(1.f + ycoord - threshold) * 2;
         xcoord += sin_distort;
-        ycoord = 1.f - ycoord;
+        ycoord = (ycoord - threshold) * -1.f + threshold;
     }
     vec2 texture_distorted = vec2(xcoord, ycoord);
     // vec4 colElite = texture(eliteTex, Texture);
