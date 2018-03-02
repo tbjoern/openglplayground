@@ -2,6 +2,9 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <SOIL/SOIL.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -223,7 +226,15 @@ int main()
 
     GLuint kitten_picture = loadAndBindTextureFromImageFile("resources/images/kitten.png", GL_TEXTURE1);
     glUniform1i(glGetUniformLocation(shader_program, "kittenTex"), 1);
+    // end Textures
 
+    auto transformation = glm::mat4(1.f);
+    transformation = glm::rotate(transformation, glm::radians(180.f), glm::vec3(0.f,0.f,1.f));
+
+    GLint transformation_matrix_uniform = glGetUniformLocation(shader_program, "transformation");
+    glUniformMatrix4fv(transformation_matrix_uniform, 1, GL_FALSE, glm::value_ptr(transformation));
+
+    // begin of main loop logic
     auto t_start = std::chrono::high_resolution_clock::now();
 
     while(!glfwWindowShouldClose(window))

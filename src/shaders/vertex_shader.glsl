@@ -8,9 +8,11 @@ in vec3 color;
 out vec3 Color;
 out vec2 Texture;
 
+uniform mat4 transformation;
+
 void main()
 {
     Color = color;
     Texture = texture;
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = transformation * vec4(position, 0.0, 1.0);
 }
