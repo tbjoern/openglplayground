@@ -6,9 +6,14 @@ in vec3 Color;
 
 out vec4 out_color;
 
-uniform sampler2D tex;
+uniform sampler2D eliteTex;
+uniform sampler2D kittenTex;
+
+uniform float time;
 
 void main()
 {
-    out_color = texture(tex, Texture) * vec4(Color, 1.0);
+    vec4 colElite = texture(eliteTex, Texture);
+    vec4 colKitten = texture(kittenTex, Texture);
+    out_color = mix(colElite, colKitten, time);
 }

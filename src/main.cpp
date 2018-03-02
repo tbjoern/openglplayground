@@ -49,19 +49,18 @@ namespace {
     };
 
     // https://stackoverflow.com/questions/116038/what-is-the-best-way-to-read-an-entire-file-into-a-stdstring-in-c
-    std::string readFile(const std::string &fileName)
+    std::string readFile(const std::string& fileName)
     {
-        using namespace std;
-        ifstream ifs(fileName.c_str(), ios::in | ios::binary | ios::ate);
-        ifs.exceptions ( ifstream::failbit | ifstream::badbit );
+        std::ifstream ifs(fileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+        ifs.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
 
-        ifstream::pos_type fileSize = ifs.tellg();
-        ifs.seekg(0, ios::beg);
+        std::ifstream::pos_type fileSize = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
 
-        vector<char> bytes(fileSize);
+        std::vector<char> bytes(fileSize);
         ifs.read(bytes.data(), fileSize);
 
-        return string(bytes.data(), fileSize);
+        return std::string(bytes.data(), fileSize);
     }
 
     GLuint compileShaderFromSourceFile(const std::string& filename, GLenum shader_type) {
@@ -89,6 +88,31 @@ namespace {
         char buffer[512];
         glGetShaderInfoLog(shader, 512, NULL, buffer);
         return std::string(buffer);
+    }
+
+    GLuint loadAndBindTextureFromImageFile(const std::string& filename, GLenum active_texture) {
+        GLuint texture;
+        glGenTextures(1, &texture);
+
+        glActiveTexture(active_texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        int width, height;
+        unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        SOIL_free_image_data(image);
+
+        return texture;
     }
 }
 
@@ -181,6 +205,8 @@ int main()
     GLint texture_shader_attribute = glGetAttribLocation(shader_program, "texture");
     glVertexAttribPointer(texture_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
 
+    GLint time_uniform = glGetUniformLocation(shader_program, "time");
+
     glEnableVertexAttribArray(position_shader_attribute);
     glEnableVertexAttribArray(color_shader_attribute);
     glEnableVertexAttribArray(texture_shader_attribute);
@@ -191,29 +217,21 @@ int main()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
-    // initialize Texture
-    GLuint texture;
-    glGenTextures(1, &texture);
+    // initialize Textures
+    GLuint elite_picture = loadAndBindTextureFromImageFile("resources/images/elite_dangerous.jpg", GL_TEXTURE0);
+    glUniform1i(glGetUniformLocation(shader_program, "eliteTex"), 0);
 
-    glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint kitten_picture = loadAndBindTextureFromImageFile("resources/images/kitten.png", GL_TEXTURE1);
+    glUniform1i(glGetUniformLocation(shader_program, "kittenTex"), 1);
 
-    int width, height;
-    unsigned char* image = SOIL_load_image("resources/images/elite_dangerous.jpg", &width, &height, 0, SOIL_LOAD_RGB);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    SOIL_free_image_data(image);
+    auto t_start = std::chrono::high_resolution_clock::now();
 
     while(!glfwWindowShouldClose(window))
     {
+        auto t_now = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+
+        glUniform1f(time_uniform, (sin(time* 4.f) + 1.f) / 2.f);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
