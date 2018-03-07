@@ -18,105 +18,115 @@
 
 namespace {
 
-    class ShaderCompilationException : public std::exception {
-    private:
-        std::string _what_message;
-        GLuint _shader;
-        bool _shader_set;
-    public:
-        ShaderCompilationException(std::string shader_source_filename, std::string additional_info="") : _what_message(),  _shader(), _shader_set(true) {
-            std::stringstream s;
-            s << "Shader compilation failed: " << shader_source_filename << std::endl << additional_info;
-            _what_message = s.str();
-        };
+static bool activate_flip = false;
 
-        ShaderCompilationException(std::string shader_source_filename, GLuint shader, std::string additional_info="") : _what_message(),  _shader(shader), _shader_set(true) {
-            std::stringstream s;
-            s << "Shader compilation failed: " << shader_source_filename << std::endl << additional_info;
-            _what_message = s.str();
-        };
-
-        virtual ~ShaderCompilationException() = default;
-
-        const char* what() const noexcept override {
-            return _what_message.c_str();
-        }
-
-        bool hasShader() const {
-            return _shader_set;
-        }
-
-        GLuint shader() const {
-            return _shader;
-        }
+class ShaderCompilationException : public std::exception {
+private:
+    std::string _what_message;
+    GLuint _shader;
+    bool _shader_set;
+public:
+    ShaderCompilationException(std::string shader_source_filename, std::string additional_info="") : _what_message(),  _shader(), _shader_set(true) {
+        std::stringstream s;
+        s << "Shader compilation failed: " << shader_source_filename << std::endl << additional_info;
+        _what_message = s.str();
     };
 
-    // https://stackoverflow.com/questions/116038/what-is-the-best-way-to-read-an-entire-file-into-a-stdstring-in-c
-    std::string readFile(const std::string& fileName)
-    {
-        std::ifstream ifs(fileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
-        ifs.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
+    ShaderCompilationException(std::string shader_source_filename, GLuint shader, std::string additional_info="") : _what_message(),  _shader(shader), _shader_set(true) {
+        std::stringstream s;
+        s << "Shader compilation failed: " << shader_source_filename << std::endl << additional_info;
+        _what_message = s.str();
+    };
 
-        std::ifstream::pos_type fileSize = ifs.tellg();
-        ifs.seekg(0, std::ios::beg);
+    virtual ~ShaderCompilationException() = default;
 
-        std::vector<char> bytes(fileSize);
-        ifs.read(bytes.data(), fileSize);
-
-        return std::string(bytes.data(), fileSize);
+    const char* what() const noexcept override {
+        return _what_message.c_str();
     }
 
-    GLuint compileShaderFromSourceFile(const std::string& filename, GLenum shader_type) {
-        std::string shader_source;
-        try {
-           shader_source = readFile(filename);
-        } catch (const std::ifstream::failure& e) {
-            throw ShaderCompilationException(filename, "Could not read file");
-        }
-        GLuint shader = glCreateShader(shader_type);
-        const char* source_cstyle = shader_source.c_str();
-        glShaderSource(shader, 1, &source_cstyle, NULL);
-        glCompileShader(shader);
-
-        GLint status;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
-        if(status == GL_TRUE) {
-            return shader;
-        } else {
-            throw ShaderCompilationException(filename, shader ,"Compilation Error");
-        }
+    bool hasShader() const {
+        return _shader_set;
     }
 
-    std::string getShaderCompileLog(GLuint shader) {
-        char buffer[512];
-        glGetShaderInfoLog(shader, 512, NULL, buffer);
-        return std::string(buffer);
+    GLuint shader() const {
+        return _shader;
     }
+};
 
-    GLuint loadAndBindTextureFromImageFile(const std::string& filename, GLenum active_texture) {
-        GLuint texture;
-        glGenTextures(1, &texture);
+// https://stackoverflow.com/questions/116038/what-is-the-best-way-to-read-an-entire-file-into-a-stdstring-in-c
+std::string readFile(const std::string& fileName)
+{
+    std::ifstream ifs(fileName.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+    ifs.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
 
-        glActiveTexture(active_texture);
-        glBindTexture(GL_TEXTURE_2D, texture);
+    std::ifstream::pos_type fileSize = ifs.tellg();
+    ifs.seekg(0, std::ios::beg);
 
-        int width, height;
-        unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+    std::vector<char> bytes(fileSize);
+    ifs.read(bytes.data(), fileSize);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    return std::string(bytes.data(), fileSize);
+}
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        SOIL_free_image_data(image);
-
-        return texture;
+GLuint compileShaderFromSourceFile(const std::string& filename, GLenum shader_type) {
+    std::string shader_source;
+    try {
+        shader_source = readFile(filename);
+    } catch (const std::ifstream::failure& e) {
+        throw ShaderCompilationException(filename, "Could not read file");
     }
+    GLuint shader = glCreateShader(shader_type);
+    const char* source_cstyle = shader_source.c_str();
+    glShaderSource(shader, 1, &source_cstyle, NULL);
+    glCompileShader(shader);
+
+    GLint status;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if(status == GL_TRUE) {
+        return shader;
+    } else {
+        throw ShaderCompilationException(filename, shader ,"Compilation Error");
+    }
+}
+
+std::string getShaderCompileLog(GLuint shader) {
+    char buffer[512];
+    glGetShaderInfoLog(shader, 512, NULL, buffer);
+    return std::string(buffer);
+}
+
+GLuint loadAndBindTextureFromImageFile(const std::string& filename, GLenum active_texture) {
+    GLuint texture;
+    glGenTextures(1, &texture);
+
+    glActiveTexture(active_texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    int width, height;
+    unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    SOIL_free_image_data(image);
+
+    return texture;
+}
+
+void key_input(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if(key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        activate_flip = true;
+    }
+}
+
 }
 
 int main() 
@@ -131,6 +141,7 @@ int main()
 
     GLFWwindow* window = glfwCreateWindow(800, 600, "OpenGL", nullptr, nullptr); // Windowed
 
+    glfwSetKeyCallback(window, key_input);
     glfwMakeContextCurrent(window);
 
     glewExperimental = GL_TRUE;
@@ -246,15 +257,36 @@ int main()
     // begin of main loop logic
     auto t_start = std::chrono::high_resolution_clock::now();
 
+    float flip_intensity = 0.f;
+    float flip_intensity_decay = 1.f;
+
     while(!glfwWindowShouldClose(window))
     {
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // process user input
+        if(activate_flip) {
+            flip_intensity = 4.f;
+            flip_intensity_decay = flip_intensity / 50.f;
+            activate_flip = false;
+        }
+
+        if(flip_intensity > 0.f) {
+            flip_intensity -= flip_intensity_decay;
+            flip_intensity_decay = flip_intensity_decay > 0.005f ? flip_intensity / 50.f : 0.005f;
+        }
+        else {
+            flip_intensity = 0.f;
+        }
 
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
         auto model = glm::mat4(1.f);
+        // horizontal spin
         model = glm::rotate(model,time * glm::radians(180.f), glm::vec3(0.f,0.f,1.f));
+        // spin around y axis
+        model = glm::rotate(model,flip_intensity * glm::radians(360.f), glm::vec3(0.f,1.f,0.f));
         glUniformMatrix4fv(model_matrix_uniform, 1, GL_FALSE, glm::value_ptr(model));
 
         glUniform1f(time_uniform, (sin(time* 4.f) + 1.f) / 2.f);

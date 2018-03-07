@@ -17,5 +17,5 @@ void main()
 {
     Color = color;
     Texture = texture;
-    gl_Position = projection * view * model * vec4(position * time_v, 0.0, 1.0);
+    gl_Position = projection * view * model * vec4(position, 0.0, 1.0);
 }
