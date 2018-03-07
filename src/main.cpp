@@ -209,6 +209,7 @@ int main()
     glVertexAttribPointer(texture_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
 
     GLint time_uniform = glGetUniformLocation(shader_program, "time");
+    GLint time_uniform_vertex = glGetUniformLocation(shader_program, "time_v");
 
     glEnableVertexAttribArray(position_shader_attribute);
     glEnableVertexAttribArray(color_shader_attribute);
@@ -228,21 +229,36 @@ int main()
     glUniform1i(glGetUniformLocation(shader_program, "kittenTex"), 1);
     // end Textures
 
-    auto transformation = glm::mat4(1.f);
-    transformation = glm::rotate(transformation, glm::radians(180.f), glm::vec3(0.f,0.f,1.f));
+    GLint model_matrix_uniform = glGetUniformLocation(shader_program, "model");
+    GLint view_matrix_uniform = glGetUniformLocation(shader_program, "view");
+    GLint projection_matrix_uniform = glGetUniformLocation(shader_program, "projection");
+    
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(1.2f, 1.2f, 1.2f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+    glUniformMatrix4fv(view_matrix_uniform, 1, GL_FALSE, glm::value_ptr(view));
 
-    GLint transformation_matrix_uniform = glGetUniformLocation(shader_program, "transformation");
-    glUniformMatrix4fv(transformation_matrix_uniform, 1, GL_FALSE, glm::value_ptr(transformation));
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 1.0f, 10.0f);
+    glUniformMatrix4fv(projection_matrix_uniform, 1, GL_FALSE, glm::value_ptr(proj));
 
     // begin of main loop logic
     auto t_start = std::chrono::high_resolution_clock::now();
 
     while(!glfwWindowShouldClose(window))
     {
+        glClear(GL_COLOR_BUFFER_BIT);
+
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
+        auto model = glm::mat4(1.f);
+        model = glm::rotate(model,time * glm::radians(180.f), glm::vec3(0.f,0.f,1.f));
+        glUniformMatrix4fv(model_matrix_uniform, 1, GL_FALSE, glm::value_ptr(model));
+
         glUniform1f(time_uniform, (sin(time* 4.f) + 1.f) / 2.f);
+        glUniform1f(time_uniform_vertex, (sin(time* 4.f) + 1.f) / 2.f);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
