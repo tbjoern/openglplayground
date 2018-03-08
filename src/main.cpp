@@ -16,6 +16,8 @@
 
 #include <cmath>
 
+#include "vertex_data.hpp"
+
 namespace {
 
 static bool activate_flip = false;
@@ -147,6 +149,8 @@ int main()
     glewExperimental = GL_TRUE;
     glewInit();
 
+    glEnable(GL_DEPTH_TEST);
+
     // load shaders
     std::string vertex_shader_source_file = "shaders/vertex_shader.glsl";
     std::string fragment_shader_source_file = "shaders/fragment_shader.glsl";
@@ -193,13 +197,6 @@ int main()
     std::cout << vertexBuffer << std::endl;
 
     // triangle coordinates
-    float vertices[] = {
-        -0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 0.f, 0.f, // Top-left
-        0.5f,  0.5f, 0.0f, 1.0f, 0.0f, 1.f, 0.f, // Top-right
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 1.f, 1.f, // Bottom-right
-        -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.f, 1.f  // Bottom-left
-    };
-
     GLuint elements[] = {
         0, 1, 2,
         2, 3, 0
@@ -211,13 +208,13 @@ int main()
 
     // link vertex data to shader input
     GLint position_shader_attribute = glGetAttribLocation(shader_program, "position");
-    glVertexAttribPointer(position_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), 0); // also stores the current vertex buffer
+    glVertexAttribPointer(position_shader_attribute, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), 0); // also stores the current vertex buffer
 
     GLint color_shader_attribute = glGetAttribLocation(shader_program, "color");
-    glVertexAttribPointer(color_shader_attribute, 3, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(2*sizeof(float)));
+    glVertexAttribPointer(color_shader_attribute, 3, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(3*sizeof(float)));
 
     GLint texture_shader_attribute = glGetAttribLocation(shader_program, "texture");
-    glVertexAttribPointer(texture_shader_attribute, 2, GL_FLOAT, GL_FALSE, 7*sizeof(float), (void*)(5*sizeof(float)));
+    glVertexAttribPointer(texture_shader_attribute, 2, GL_FLOAT, GL_FALSE, 8*sizeof(float), (void*)(6*sizeof(float)));
 
     GLint time_uniform = glGetUniformLocation(shader_program, "time");
     GLint time_uniform_vertex = glGetUniformLocation(shader_program, "time_v");
@@ -257,27 +254,9 @@ int main()
     // begin of main loop logic
     auto t_start = std::chrono::high_resolution_clock::now();
 
-    float flip_intensity = 0.f;
-    float flip_intensity_decay = 1.f;
-
     while(!glfwWindowShouldClose(window))
     {
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // process user input
-        if(activate_flip) {
-            flip_intensity = 4.f;
-            flip_intensity_decay = flip_intensity / 50.f;
-            activate_flip = false;
-        }
-
-        if(flip_intensity > 0.f) {
-            flip_intensity -= flip_intensity_decay;
-            flip_intensity_decay = flip_intensity_decay > 0.005f ? flip_intensity / 50.f : 0.005f;
-        }
-        else {
-            flip_intensity = 0.f;
-        }
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         auto t_now = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
@@ -285,13 +264,11 @@ int main()
         auto model = glm::mat4(1.f);
         // horizontal spin
         model = glm::rotate(model,time * glm::radians(180.f), glm::vec3(0.f,0.f,1.f));
-        // spin around y axis
-        model = glm::rotate(model,flip_intensity * glm::radians(360.f), glm::vec3(0.f,1.f,0.f));
         glUniformMatrix4fv(model_matrix_uniform, 1, GL_FALSE, glm::value_ptr(model));
 
         glUniform1f(time_uniform, (sin(time* 4.f) + 1.f) / 2.f);
         glUniform1f(time_uniform_vertex, (sin(time* 4.f) + 1.f) / 2.f);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -15,5 +15,5 @@ void main()
 {
     vec4 colElite = texture(eliteTex, Texture);
     vec4 colKitten = texture(kittenTex, Texture);
-    out_color = mix(colElite, colKitten, time);
+    out_color = mix(colElite, colKitten, time) * vec4(Color, 1.f);
 }

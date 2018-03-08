@@ -2,7 +2,7 @@
 
 in vec2 texture;
 
-in vec2 position;
+in vec3 position;
 in vec3 color;
 
 out vec3 Color;
@@ -17,5 +17,5 @@ void main()
 {
     Color = color;
     Texture = texture;
-    gl_Position = projection * view * model * vec4(position, 0.0, 1.0);
+    gl_Position = projection * view * model * vec4(position, 1.0);
 }

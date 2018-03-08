@@ -5,7 +5,7 @@ set(sources
 )
 
 set(includes
-
+    vertex_data.hpp
 )
 
 set(libraries
